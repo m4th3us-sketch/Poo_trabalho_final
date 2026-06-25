@@ -1,0 +1,74 @@
+package academia.model;
+
+/**
+ * Classe abstrata que representa uma pessoa no sistema.
+ * Serve como base para {@link Aluno} e outras entidades com dados pessoais.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public abstract class Pessoa {
+
+    /** Identificador único da pessoa. */
+    protected int id;
+
+    /** Nome completo. */
+    protected String nome;
+
+    /** CPF no formato 000.000.000-00. */
+    protected String cpf;
+
+    /** Telefone de contato. */
+    protected String telefone;
+
+    /**
+     * Construtor da classe Pessoa.
+     *
+     * @param id       identificador único
+     * @param nome     nome completo
+     * @param cpf      CPF
+     * @param telefone telefone de contato
+     */
+    public Pessoa(int id, String nome, String cpf, String telefone) {
+        this.id = id;
+        this.nome = nome;
+        this.cpf = cpf;
+        this.telefone = telefone;
+    }
+
+    /**
+     * Retorna os dados da pessoa formatados como String.
+     * Deve ser implementado pelas subclasses.
+     *
+     * @return representação textual do objeto
+     */
+    public abstract String toFileString();
+
+    // ── Getters e Setters ───────────────────────────────────────────────
+
+    /** @return identificador único */
+    public int getId() { return id; }
+
+    /** @return nome completo */
+    public String getNome() { return nome; }
+
+    /** @param nome novo nome */
+    public void setNome(String nome) { this.nome = nome; }
+
+    /** @return CPF */
+    public String getCpf() { return cpf; }
+
+    /** @param cpf novo CPF */
+    public void setCpf(String cpf) { this.cpf = cpf; }
+
+    /** @return telefone */
+    public String getTelefone() { return telefone; }
+
+    /** @param telefone novo telefone */
+    public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    @Override
+    public String toString() {
+        return String.format("[%d] %s | CPF: %s | Tel: %s", id, nome, cpf, telefone);
+    }
+}

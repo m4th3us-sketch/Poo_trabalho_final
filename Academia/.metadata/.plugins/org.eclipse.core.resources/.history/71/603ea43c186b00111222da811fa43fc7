@@ -1,0 +1,156 @@
+package academia.service;
+
+import academia.exception.EntidadeNaoEncontradaException;
+import academia.exception.FichaSemExercicioException;
+import academia.model.Exercicio;
+import academia.model.FichaTreino;
+import academia.repository.AlunoRepositorio;
+import academia.repository.ExercicioRepositorio;
+import academia.repository.FichaTreinoRepositorio;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Serviço de negócio para {@link FichaTreino} e {@link Exercicio}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class FichaTreinoService {
+
+    private final FichaTreinoRepositorio fichaRepo;
+    private final ExercicioRepositorio exercicioRepo;
+    private final AlunoRepositorio alunoRepo;
+
+    /**
+     * @param fichaRepo      repositório de fichas
+     * @param exercicioRepo  repositório de exercícios
+     * @param alunoRepo      repositório de alunos
+     */
+    public FichaTreinoService(FichaTreinoRepositorio fichaRepo,
+                              ExercicioRepositorio exercicioRepo,
+                              AlunoRepositorio alunoRepo) {
+        this.fichaRepo = fichaRepo;
+        this.exercicioRepo = exercicioRepo;
+        this.alunoRepo = alunoRepo;
+    }
+
+    /**
+     * Cadastra nova ficha de treino.
+     *
+     * @param descricao   descrição da ficha
+     * @param objetivo    objetivo do treino
+     * @return ficha criada
+     */
+    public FichaTreino cadastrar(String descricao, String objetivo) {
+        FichaTreino ficha = new FichaTreino(descricao, LocalDate.now(), objetivo);
+        fichaRepo.salvar(ficha);
+        return ficha;
+    }
+
+    /**
+     * Associa uma ficha de treino a um aluno.
+     * Valida que a ficha possui ao menos um exercício.
+     *
+     * @param fichaId ID da ficha
+     * @param alunoId ID do aluno
+     * @return ficha atualizada
+     * @throws FichaSemExercicioException     se a ficha não tiver exercícios
+     * @throws EntidadeNaoEncontradaException se ficha ou aluno não existirem
+     */
+    public FichaTreino associarAluno(int fichaId, int alunoId) {
+        FichaTreino ficha = buscarPorId(fichaId);
+        alunoRepo.buscarPorId(alunoId)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Aluno", alunoId));
+        List<Exercicio> exs = exercicioRepo.listarPorFicha(fichaId);
+        if (exs.isEmpty()) throw new FichaSemExercicioException(fichaId);
+        ficha.setAlunoId(alunoId);
+        fichaRepo.atualizar(ficha);
+        return ficha;
+    }
+
+    /**
+     * Adiciona um exercício a uma ficha.
+     *
+     * @param fichaId    ID da ficha
+     * @param nome       nome do exercício
+     * @param series     séries
+     * @param repeticoes repetições
+     * @return exercício criado
+     */
+    public Exercicio adicionarExercicio(int fichaId, String nome, int series, int repeticoes) {
+        buscarPorId(fichaId);
+        Exercicio ex = new Exercicio(fichaId, nome, series, repeticoes);
+        exercicioRepo.salvar(ex);
+        return ex;
+    }
+
+    /**
+     * Remove um exercício de uma ficha.
+     *
+     * @param exercicioId ID do exercício
+     */
+    public void removerExercicio(int exercicioId) {
+        exercicioRepo.excluir(exercicioId);
+    }
+
+    /**
+     * Retorna a ficha pronta para impressão, com exercícios carregados.
+     *
+     * @param fichaId ID da ficha
+     * @return String formatada para impressão
+     */
+    public String imprimir(int fichaId) {
+        FichaTreino ficha = buscarPorId(fichaId);
+        ficha.setExercicios(exercicioRepo.listarPorFicha(fichaId));
+        return ficha.imprimir();
+    }
+
+    /** @return todas as fichas */
+    public List<FichaTreino> listarTodos() { return fichaRepo.listarTodos(); }
+
+    /**
+     * Busca ficha por ID.
+     *
+     * @param id ID da ficha
+     * @return ficha encontrada
+     */
+    public FichaTreino buscarPorId(int id) {
+        return fichaRepo.buscarPorId(id)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("FichaTreino", id));
+    }
+
+    /**
+     * Lista fichas ativas de um aluno.
+     *
+     * @param alunoId ID do aluno
+     * @return fichas ativas
+     */
+    public List<FichaTreino> listarPorAluno(int alunoId) {
+        return fichaRepo.listarPorAluno(alunoId);
+    }
+
+    /**
+     * Desativa uma ficha de treino.
+     *
+     * @param fichaId ID da ficha
+     */
+    public void desativar(int fichaId) {
+        FichaTreino ficha = buscarPorId(fichaId);
+        ficha.setAtiva(false);
+        fichaRepo.atualizar(ficha);
+    }
+
+    /**
+     * Exclui uma ficha e todos os seus exercícios.
+     *
+     * @param fichaId ID da ficha
+     */
+    public void excluir(int fichaId) {
+        buscarPorId(fichaId);
+        exercicioRepo.listarPorFicha(fichaId)
+                .forEach(e -> exercicioRepo.excluir(e.getId()));
+        fichaRepo.excluir(fichaId);
+    }
+}

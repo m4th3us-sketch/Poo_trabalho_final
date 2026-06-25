@@ -1,0 +1,17 @@
+package academia.exception;
+
+/**
+ * Lançada quando os dados de pagamento são inválidos (valor zero, forma em branco etc.).
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class PagamentoInvalidoException extends AcademiaException {
+
+    /**
+     * @param detalhe descrição do problema
+     */
+    public PagamentoInvalidoException(String detalhe) {
+        super("PAGAMENTO_INVALIDO", "Pagamento inválido: " + detalhe);
+    }
+}

@@ -1,0 +1,65 @@
+package academia.repository;
+
+import academia.model.Persistivel;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Interface genérica de repositório que define as operações CRUD padrão.
+ *
+ * <p>Todas as implementações de repositório devem implementar esta interface,
+ * garantindo consistência nas operações de persistência.</p>
+ *
+ * @param <T> tipo da entidade gerenciada, que deve implementar {@link Persistivel}
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public interface Repositorio<T extends Persistivel> {
+
+    /**
+     * Persiste uma nova entidade e a adiciona à lista em memória.
+     *
+     * @param entidade entidade a ser salva
+     */
+    void salvar(T entidade);
+
+    /**
+     * Busca uma entidade pelo seu ID.
+     *
+     * @param id identificador único
+     * @return Optional contendo a entidade, ou vazio se não encontrada
+     */
+    Optional<T> buscarPorId(int id);
+
+    /**
+     * Retorna todas as entidades do repositório.
+     *
+     * @return lista de todas as entidades
+     */
+    List<T> listarTodos();
+
+    /**
+     * Atualiza os dados de uma entidade existente no arquivo.
+     *
+     * @param entidade entidade com dados atualizados
+     */
+    void atualizar(T entidade);
+
+    /**
+     * Remove uma entidade pelo ID.
+     *
+     * @param id identificador da entidade a ser removida
+     */
+    void excluir(int id);
+
+    /**
+     * Carrega os dados do arquivo para a lista em memória.
+     */
+    void carregarDoArquivo();
+
+    /**
+     * Grava toda a lista em memória no arquivo.
+     */
+    void gravarNoArquivo();
+}

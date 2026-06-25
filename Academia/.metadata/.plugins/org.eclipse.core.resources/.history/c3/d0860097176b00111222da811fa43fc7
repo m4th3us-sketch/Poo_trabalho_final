@@ -1,0 +1,47 @@
+package academia.exception;
+
+/**
+ * Exceção base personalizada para o Sistema de Gerenciamento de Academia.
+ *
+ * <p>Todas as exceções de negócio do sistema devem estender esta classe,
+ * permitindo tratamento unificado nos pontos de entrada da aplicação.</p>
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class AcademiaException extends RuntimeException {
+
+    /** Código do erro para classificação programática. */
+    private final String codigo;
+
+    /**
+     * Construtor com mensagem e código.
+     *
+     * @param codigo  código identificador do erro (ex.: "ALUNO_NAO_ENCONTRADO")
+     * @param mensagem mensagem descritiva do erro
+     */
+    public AcademiaException(String codigo, String mensagem) {
+        super(mensagem);
+        this.codigo = codigo;
+    }
+
+    /**
+     * Construtor com mensagem, código e causa raiz.
+     *
+     * @param codigo  código do erro
+     * @param mensagem mensagem descritiva
+     * @param causa   exceção causadora
+     */
+    public AcademiaException(String codigo, String mensagem, Throwable causa) {
+        super(mensagem, causa);
+        this.codigo = codigo;
+    }
+
+    /** @return código identificador do erro */
+    public String getCodigo() { return codigo; }
+
+    @Override
+    public String toString() {
+        return "[" + codigo + "] " + getMessage();
+    }
+}

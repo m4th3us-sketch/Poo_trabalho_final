@@ -1,0 +1,19 @@
+package academia.exception;
+
+/**
+ * Lançada quando uma entidade buscada por ID não existe no repositório.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class EntidadeNaoEncontradaException extends AcademiaException {
+
+    /**
+     * @param entidade nome da classe (ex.: "Aluno")
+     * @param id       identificador buscado
+     */
+    public EntidadeNaoEncontradaException(String entidade, int id) {
+        super("ENTIDADE_NAO_ENCONTRADA",
+              entidade + " com ID " + id + " não encontrado(a).");
+    }
+}

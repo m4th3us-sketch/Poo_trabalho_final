@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"academia.exception","l":"AcademiaException"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"}];updateSearchResults();

@@ -1,0 +1,37 @@
+package academia.repository;
+
+import academia.model.Pagamento;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Repositório concreto para {@link Pagamento}.
+ * Estende {@link RepositorioBase} e adiciona busca por aluno.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class PagamentoRepositorio extends RepositorioBase<Pagamento> {
+
+    /** @param dataDir diretório de dados */
+    public PagamentoRepositorio(String dataDir) {
+        super(dataDir + "/pagamentos.txt");
+    }
+
+    @Override
+    protected Pagamento fromFileString(String linha) {
+        return Pagamento.fromFileString(linha);
+    }
+
+    /**
+     * Lista todos os pagamentos de um aluno específico.
+     *
+     * @param alunoId ID do aluno
+     * @return lista de pagamentos do aluno
+     */
+    public List<Pagamento> listarPorAluno(int alunoId) {
+        return lista.stream()
+                .filter(p -> p.getAlunoId() == alunoId)
+                .collect(Collectors.toList());
+    }
+}

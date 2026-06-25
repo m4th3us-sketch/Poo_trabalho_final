@@ -1,0 +1,204 @@
+package academia;
+
+import academia.exception.AcademiaException;
+import academia.model.*;
+import academia.repository.*;
+import academia.service.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Scanner;
+
+
+public class Main {
+
+    private static final String DATA_DIR = "data";
+    private static AlunoService alunoService;
+    private static PagamentoService pagamentoService;
+    private static FichaTreinoService fichaService;
+    private static AcompanhamentoService acompanhamentoService;
+    private static Scanner sc;
+
+    
+    public static void main(String[] args) {
+        AlunoRepositorio alunoRepo = new AlunoRepositorio(DATA_DIR);
+        PagamentoRepositorio pagamentoRepo = new PagamentoRepositorio(DATA_DIR);
+        FichaTreinoRepositorio fichaRepo = new FichaTreinoRepositorio(DATA_DIR);
+        ExercicioRepositorio exercicioRepo = new ExercicioRepositorio(DATA_DIR);
+        AcompanhamentoRepositorio acompRepo = new AcompanhamentoRepositorio(DATA_DIR);
+
+        alunoService = new AlunoService(alunoRepo);
+        pagamentoService = new PagamentoService(pagamentoRepo, alunoRepo);
+        fichaService = new FichaTreinoService(fichaRepo, exercicioRepo, alunoRepo);
+        acompanhamentoService = new AcompanhamentoService(acompRepo, alunoRepo);
+
+        sc = new Scanner(System.in);
+        menuPrincipal();
+    }
+
+    private static void menuPrincipal() {
+        while (true) {
+            System.out.println("\n╔═══════════════════════════════════╗");
+            System.out.println("║   SISTEMA DE GESTÃO DE ACADEMIA   ║");
+            System.out.println("╠═══════════════════════════════════╣");
+            System.out.println("║  1. Alunos                        ║");
+            System.out.println("║  2. Pagamentos                    ║");
+            System.out.println("║  3. Fichas de Treino              ║");
+            System.out.println("║  4. Acompanhamento                ║");
+            System.out.println("║  0. Sair                          ║");
+            System.out.println("╚═══════════════════════════════════╝");
+            System.out.print("Opção: ");
+            switch (sc.nextLine().trim()) {
+                case "1" -> menuAlunos();
+                case "2" -> menuPagamentos();
+                case "3" -> menuFichas();
+                case "4" -> menuAcompanhamento();
+                case "0" -> { System.out.println("Encerrando..."); return; }
+                default  -> System.out.println("Opção inválida.");
+            }
+        }
+    }
+
+    // ── ALUNOS ───────────────────────────────────────────────────────────
+    private static void menuAlunos() {
+        System.out.println("\n── ALUNOS ──");
+        System.out.println("1. Cadastrar  2. Listar  3. Buscar  4. Atualizar  5. Excluir  0. Voltar");
+        System.out.print("Opção: ");
+        try {
+            switch (sc.nextLine().trim()) {
+                case "1" -> cadastrarAluno();
+                case "2" -> listarAlunos();
+                case "3" -> buscarAluno();
+                case "4" -> atualizarAluno();
+                case "5" -> excluirAluno();
+            }
+        } catch (AcademiaException e) {
+            System.out.println("ERRO: " + e);
+        }
+    }
+
+    private static void cadastrarAluno() {
+        System.out.print("Nome: "); String nome = sc.nextLine();
+        System.out.print("CPF: "); String cpf = sc.nextLine();
+        System.out.print("Data Nasc (dd/MM/yyyy): ");
+        LocalDate nasc = LocalDate.parse(sc.nextLine(),
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        System.out.print("Telefone: "); String tel = sc.nextLine();
+        System.out.print("Email: "); String email = sc.nextLine();
+        Aluno a = alunoService.cadastrar(nome, cpf, nasc, tel, email);
+        System.out.println("Aluno cadastrado: " + a);
+    }
+
+    private static void listarAlunos() {
+        List<Aluno> lista = alunoService.listarTodos();
+        if (lista.isEmpty()) { System.out.println("Nenhum aluno cadastrado."); return; }
+        lista.forEach(System.out::println);
+    }
+
+    private static void buscarAluno() {
+        System.out.print("ID do aluno: "); int id = Integer.parseInt(sc.nextLine());
+        System.out.println(alunoService.buscarPorId(id));
+    }
+
+    private static void atualizarAluno() {
+        System.out.print("ID do aluno: "); int id = Integer.parseInt(sc.nextLine());
+        System.out.print("Novo nome: "); String nome = sc.nextLine();
+        System.out.print("Novo telefone: "); String tel = sc.nextLine();
+        System.out.print("Novo email: "); String email = sc.nextLine();
+        System.out.print("Nova data nasc (dd/MM/yyyy): ");
+        LocalDate nasc = LocalDate.parse(sc.nextLine(),
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        System.out.println("Atualizado: " + alunoService.atualizar(id, nome, tel, email, nasc));
+    }
+
+    private static void excluirAluno() {
+        System.out.print("ID do aluno: "); int id = Integer.parseInt(sc.nextLine());
+        alunoService.excluir(id);
+        System.out.println("Aluno #" + id + " excluído.");
+    }
+
+    //PAGAMENTOS 
+    private static void menuPagamentos() {
+        System.out.println("\n── PAGAMENTOS ──");
+        System.out.println("1. Registrar  2. Listar por aluno  3. Cancelar  4. Excluir  0. Voltar");
+        System.out.print("Opção: ");
+        try {
+            switch (sc.nextLine().trim()) {
+                case "1" -> registrarPagamento();
+                case "2" -> { System.out.print("ID aluno: "); int id = Integer.parseInt(sc.nextLine());
+                              pagamentoService.listarPorAluno(id).forEach(System.out::println); }
+                case "3" -> { System.out.print("ID pagamento: "); pagamentoService.cancelar(Integer.parseInt(sc.nextLine())); System.out.println("Cancelado."); }
+                case "4" -> { System.out.print("ID pagamento: "); pagamentoService.excluir(Integer.parseInt(sc.nextLine())); System.out.println("Excluído."); }
+            }
+        } catch (AcademiaException e) { System.out.println("ERRO: " + e); }
+    }
+
+    private static void registrarPagamento() {
+        System.out.print("ID aluno: "); int aid = Integer.parseInt(sc.nextLine());
+        System.out.print("Valor (R$): "); double val = Double.parseDouble(sc.nextLine());
+        System.out.print("Forma (PIX/Cartão/Dinheiro): "); String forma = sc.nextLine();
+        Pagamento p = pagamentoService.registrar(aid, val, LocalDate.now(), forma);
+        System.out.println("Registrado: " + p);
+    }
+
+    //FICHAS
+    private static void menuFichas() {
+        System.out.println("\n── FICHAS DE TREINO ──");
+        System.out.println("1. Cadastrar ficha  2. Adicionar exercício  3. Associar aluno");
+        System.out.println("4. Imprimir ficha   5. Listar fichas        6. Excluir  0. Voltar");
+        System.out.print("Opção: ");
+        try {
+            switch (sc.nextLine().trim()) {
+                case "1" -> { System.out.print("Descrição: "); String d = sc.nextLine();
+                              System.out.print("Objetivo: "); String o = sc.nextLine();
+                              System.out.println("Ficha: " + fichaService.cadastrar(d, o)); }
+                case "2" -> adicionarExercicio();
+                case "3" -> { System.out.print("ID ficha: "); int f = Integer.parseInt(sc.nextLine());
+                              System.out.print("ID aluno: "); int a = Integer.parseInt(sc.nextLine());
+                              System.out.println("Associada: " + fichaService.associarAluno(f, a)); }
+                case "4" -> { System.out.print("ID ficha: "); System.out.println(fichaService.imprimir(Integer.parseInt(sc.nextLine()))); }
+                case "5" -> fichaService.listarTodos().forEach(System.out::println);
+                case "6" -> { System.out.print("ID ficha: "); fichaService.excluir(Integer.parseInt(sc.nextLine())); System.out.println("Excluída."); }
+            }
+        } catch (AcademiaException e) { System.out.println("ERRO: " + e); }
+    }
+
+    private static void adicionarExercicio() {
+        System.out.print("ID ficha: "); int fid = Integer.parseInt(sc.nextLine());
+        System.out.print("Nome exercício: "); String nome = sc.nextLine();
+        System.out.print("Séries: "); int s = Integer.parseInt(sc.nextLine());
+        System.out.print("Repetições: "); int r = Integer.parseInt(sc.nextLine());
+        System.out.println("Adicionado: " + fichaService.adicionarExercicio(fid, nome, s, r));
+    }
+
+    //ACOMPANHAMENTO
+    private static void menuAcompanhamento() {
+        System.out.println("\n── ACOMPANHAMENTO ──");
+        System.out.println("1. Registrar  2. Histórico do aluno  3. Atualizar  4. Excluir  0. Voltar");
+        System.out.print("Opção: ");
+        try {
+            switch (sc.nextLine().trim()) {
+                case "1" -> registrarAcompanhamento();
+                case "2" -> { System.out.print("ID aluno: "); int id = Integer.parseInt(sc.nextLine());
+                              acompanhamentoService.listarPorAluno(id).forEach(System.out::println); }
+                case "3" -> atualizarAcompanhamento();
+                case "4" -> { System.out.print("ID acomp.: "); acompanhamentoService.excluir(Integer.parseInt(sc.nextLine())); System.out.println("Excluído."); }
+            }
+        } catch (AcademiaException e) { System.out.println("ERRO: " + e); }
+    }
+
+    private static void registrarAcompanhamento() {
+        System.out.print("ID aluno: "); int aid = Integer.parseInt(sc.nextLine());
+        System.out.print("Observações: "); String obs = sc.nextLine();
+        System.out.print("Evolução: "); String evo = sc.nextLine();
+        Acompanhamento ac = acompanhamentoService.registrar(aid, LocalDate.now(), obs, evo);
+        System.out.println("Registrado: " + ac);
+    }
+
+    private static void atualizarAcompanhamento() {
+        System.out.print("ID acompanhamento: "); int id = Integer.parseInt(sc.nextLine());
+        System.out.print("Novas observações: "); String obs = sc.nextLine();
+        System.out.print("Nova evolução: "); String evo = sc.nextLine();
+        System.out.println("Atualizado: " + acompanhamentoService.atualizar(id, obs, evo));
+    }
+}

@@ -1,0 +1,36 @@
+package academia.repository;
+
+import academia.model.Exercicio;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Repositório concreto para {@link Exercicio}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class ExercicioRepositorio extends RepositorioBase<Exercicio> {
+
+    /** @param dataDir diretório de dados */
+    public ExercicioRepositorio(String dataDir) {
+        super(dataDir + "/exercicios.txt");
+    }
+
+    @Override
+    protected Exercicio fromFileString(String linha) {
+        return Exercicio.fromFileString(linha);
+    }
+
+    /**
+     * Lista exercícios de uma ficha específica.
+     *
+     * @param fichaTreinoId ID da ficha
+     * @return exercícios da ficha
+     */
+    public List<Exercicio> listarPorFicha(int fichaTreinoId) {
+        return lista.stream()
+                .filter(e -> e.getFichaTreinoId() == fichaTreinoId)
+                .collect(Collectors.toList());
+    }
+}

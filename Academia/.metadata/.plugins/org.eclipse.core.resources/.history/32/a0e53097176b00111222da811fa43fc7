@@ -1,0 +1,91 @@
+package academia.service;
+
+import academia.exception.CpfDuplicadoException;
+import academia.exception.EntidadeNaoEncontradaException;
+import academia.model.Aluno;
+import academia.repository.AlunoRepositorio;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Serviço de negócio para operações sobre {@link Aluno}.
+ * Coordena validações e delega persistência ao {@link AlunoRepositorio}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class AlunoService {
+
+    private final AlunoRepositorio repositorio;
+
+    /** @param repositorio repositório de alunos */
+    public AlunoService(AlunoRepositorio repositorio) {
+        this.repositorio = repositorio;
+    }
+
+    /**
+     * Cadastra um novo aluno após validar unicidade de CPF.
+     *
+     * @param nome           nome completo
+     * @param cpf            CPF
+     * @param dataNascimento data de nascimento
+     * @param telefone       telefone
+     * @param email          e-mail
+     * @return aluno criado
+     * @throws CpfDuplicadoException se o CPF já estiver cadastrado
+     */
+    public Aluno cadastrar(String nome, String cpf, LocalDate dataNascimento,
+                           String telefone, String email) {
+        repositorio.buscarPorCpf(cpf).ifPresent(a -> { throw new CpfDuplicadoException(cpf); });
+        Aluno aluno = new Aluno(nome, cpf, dataNascimento, telefone, email);
+        repositorio.salvar(aluno);
+        return aluno;
+    }
+
+    /**
+     * Busca um aluno por ID.
+     *
+     * @param id ID do aluno
+     * @return aluno encontrado
+     * @throws EntidadeNaoEncontradaException se não encontrado
+     */
+    public Aluno buscarPorId(int id) {
+        return repositorio.buscarPorId(id)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Aluno", id));
+    }
+
+    /** @return lista de todos os alunos */
+    public List<Aluno> listarTodos() { return repositorio.listarTodos(); }
+
+    /**
+     * Atualiza dados de um aluno.
+     *
+     * @param id ID do aluno
+     * @param nome novo nome
+     * @param telefone novo telefone
+     * @param email novo e-mail
+     * @param dataNascimento nova data de nascimento
+     * @return aluno atualizado
+     */
+    public Aluno atualizar(int id, String nome, String telefone,
+                           String email, LocalDate dataNascimento) {
+        Aluno aluno = buscarPorId(id);
+        aluno.setNome(nome);
+        aluno.setTelefone(telefone);
+        aluno.setEmail(email);
+        aluno.setDataNascimento(dataNascimento);
+        repositorio.atualizar(aluno);
+        return aluno;
+    }
+
+    /**
+     * Remove um aluno do sistema.
+     *
+     * @param id ID do aluno a excluir
+     */
+    public void excluir(int id) {
+        buscarPorId(id);
+        repositorio.excluir(id);
+    }
+}

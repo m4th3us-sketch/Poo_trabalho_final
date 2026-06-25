@@ -1,0 +1,18 @@
+package academia.exception;
+
+/**
+ * Lançada ao tentar cadastrar um aluno com CPF já existente no sistema.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class CpfDuplicadoException extends AcademiaException {
+
+    /**
+     * @param cpf o CPF duplicado
+     */
+    public CpfDuplicadoException(String cpf) {
+        super("CPF_DUPLICADO",
+              "Já existe um aluno cadastrado com o CPF: " + cpf);
+    }
+}

@@ -1,0 +1,36 @@
+package academia.repository;
+
+import academia.model.Aluno;
+import java.util.Optional;
+
+/**
+ * Repositório concreto para {@link Aluno}.
+ * Estende {@link RepositorioBase} e adiciona busca por CPF.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class AlunoRepositorio extends RepositorioBase<Aluno> {
+
+    /**
+     * @param dataDir diretório onde o arquivo {@code alunos.txt} será salvo
+     */
+    public AlunoRepositorio(String dataDir) {
+        super(dataDir + "/alunos.txt");
+    }
+
+    @Override
+    protected Aluno fromFileString(String linha) {
+        return Aluno.fromFileString(linha);
+    }
+
+    /**
+     * Busca um aluno pelo CPF.
+     *
+     * @param cpf CPF a buscar
+     * @return Optional com o aluno, ou vazio se não encontrado
+     */
+    public Optional<Aluno> buscarPorCpf(String cpf) {
+        return lista.stream().filter(a -> a.getCpf().equals(cpf)).findFirst();
+    }
+}

@@ -1,0 +1,100 @@
+package academia.service;
+
+import academia.exception.EntidadeNaoEncontradaException;
+import academia.model.Acompanhamento;
+import academia.repository.AcompanhamentoRepositorio;
+import academia.repository.AlunoRepositorio;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Serviço de negócio para {@link Acompanhamento}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class AcompanhamentoService {
+
+    private final AcompanhamentoRepositorio repositorio;
+    private final AlunoRepositorio alunoRepositorio;
+
+    /**
+     * @param repositorio      repositório de acompanhamentos
+     * @param alunoRepositorio repositório de alunos
+     */
+    public AcompanhamentoService(AcompanhamentoRepositorio repositorio,
+                                  AlunoRepositorio alunoRepositorio) {
+        this.repositorio = repositorio;
+        this.alunoRepositorio = alunoRepositorio;
+    }
+
+    /**
+     * Registra um novo acompanhamento para um aluno.
+     *
+     * @param alunoId     ID do aluno
+     * @param data        data do acompanhamento
+     * @param observacoes observações
+     * @param evolucao    evolução observada
+     * @return acompanhamento registrado
+     * @throws EntidadeNaoEncontradaException se aluno não existir
+     */
+    public Acompanhamento registrar(int alunoId, LocalDate data,
+                                    String observacoes, String evolucao) {
+        alunoRepositorio.buscarPorId(alunoId)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Aluno", alunoId));
+        Acompanhamento ac = new Acompanhamento(alunoId, data, observacoes, evolucao);
+        repositorio.salvar(ac);
+        return ac;
+    }
+
+    /**
+     * Lista histórico de acompanhamento de um aluno.
+     *
+     * @param alunoId ID do aluno
+     * @return lista de acompanhamentos
+     */
+    public List<Acompanhamento> listarPorAluno(int alunoId) {
+        return repositorio.listarPorAluno(alunoId);
+    }
+
+    /** @return todos os acompanhamentos */
+    public List<Acompanhamento> listarTodos() { return repositorio.listarTodos(); }
+
+    /**
+     * Busca acompanhamento por ID.
+     *
+     * @param id ID do registro
+     * @return acompanhamento encontrado
+     */
+    public Acompanhamento buscarPorId(int id) {
+        return repositorio.buscarPorId(id)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Acompanhamento", id));
+    }
+
+    /**
+     * Atualiza observações e evolução de um registro.
+     *
+     * @param id          ID do registro
+     * @param observacoes novas observações
+     * @param evolucao    nova evolução
+     * @return registro atualizado
+     */
+    public Acompanhamento atualizar(int id, String observacoes, String evolucao) {
+        Acompanhamento ac = buscarPorId(id);
+        ac.setObservacoes(observacoes);
+        ac.setEvolucao(evolucao);
+        repositorio.atualizar(ac);
+        return ac;
+    }
+
+    /**
+     * Exclui um registro de acompanhamento.
+     *
+     * @param id ID do registro
+     */
+    public void excluir(int id) {
+        buscarPorId(id);
+        repositorio.excluir(id);
+    }
+}

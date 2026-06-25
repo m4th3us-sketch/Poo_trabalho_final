@@ -1,0 +1,101 @@
+package academia.model;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Representa um aluno matriculado na academia.
+ * Estende {@link Pessoa} e implementa {@link Persistivel}.
+ *
+ * <p>Os IDs são gerados automaticamente de forma sequencial via atributo estático.</p>
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class Aluno extends Pessoa implements Persistivel {
+
+    /** Contador estático para geração automática de IDs sequenciais. */
+    private static int contadorId = 1;
+
+    /** Formato de data utilizado na persistência em arquivo. */
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    /** Data de nascimento do aluno. */
+    private LocalDate dataNascimento;
+
+    /** E-mail de contato. */
+    private String email;
+
+    /**
+     * Construtor completo — usado ao carregar dados do arquivo (ID já existente).
+     *
+     * @param id             identificador já persistido
+     * @param nome           nome completo
+     * @param cpf            CPF
+     * @param dataNascimento data de nascimento
+     * @param telefone       telefone
+     * @param email          e-mail
+     */
+    public Aluno(int id, String nome, String cpf, LocalDate dataNascimento,
+                 String telefone, String email) {
+        super(id, nome, cpf, telefone);
+        this.dataNascimento = dataNascimento;
+        this.email = email;
+        if (id >= contadorId) contadorId = id + 1;
+    }
+
+    /**
+     * Construtor sem ID — gera ID automático sequencial.
+     *
+     * @param nome           nome completo
+     * @param cpf            CPF
+     * @param dataNascimento data de nascimento
+     * @param telefone       telefone
+     * @param email          e-mail
+     */
+    public Aluno(String nome, String cpf, LocalDate dataNascimento,
+                 String telefone, String email) {
+        this(contadorId++, nome, cpf, dataNascimento, telefone, email);
+    }
+
+    /**
+     * Serializa o aluno em linha delimitada por {@code |}.
+     * Formato: {@code id|nome|cpf|dataNascimento|telefone|email}
+     *
+     * @return linha formatada
+     */
+    @Override
+    public String toFileString() {
+        return id + "|" + nome + "|" + cpf + "|"
+                + dataNascimento.format(FMT) + "|" + telefone + "|" + email;
+    }
+
+    /**
+     * Reconstrói um {@link Aluno} a partir de uma linha do arquivo.
+     *
+     * @param linha linha no formato de {@link #toFileString()}
+     * @return instância de Aluno
+     */
+    public static Aluno fromFileString(String linha) {
+        String[] p = linha.split("\\|");
+        return new Aluno(Integer.parseInt(p[0]), p[1], p[2],
+                LocalDate.parse(p[3], FMT), p[4], p[5]);
+    }
+
+    /** Reseta contador de IDs (para uso em testes). @param valor novo valor */
+    public static void resetContador(int valor) { contadorId = valor; }
+
+    /** @return próximo ID a ser gerado */
+    public static int getContadorId() { return contadorId; }
+
+    public LocalDate getDataNascimento() { return dataNascimento; }
+    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    @Override
+    public String toString() {
+        return String.format("[%d] %s | CPF: %s | Nasc: %s | Tel: %s | Email: %s",
+                id, nome, cpf, dataNascimento.format(FMT), telefone, email);
+    }
+}

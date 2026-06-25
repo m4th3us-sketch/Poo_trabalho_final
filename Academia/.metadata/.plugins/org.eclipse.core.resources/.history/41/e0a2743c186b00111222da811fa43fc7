@@ -1,0 +1,92 @@
+package academia.model;
+
+/**
+ * Representa um exercício físico pertencente a uma {@link FichaTreino}.
+ * Implementa {@link Persistivel}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class Exercicio implements Persistivel {
+
+    /** Contador estático para IDs sequenciais. */
+    private static int contadorId = 1;
+
+    private int id;
+    /** ID da ficha de treino à qual este exercício pertence. */
+    private int fichaTreinoId;
+    /** Nome do exercício (ex.: "Supino Reto"). */
+    private String nome;
+    /** Número de séries. */
+    private int series;
+    /** Número de repetições por série. */
+    private int repeticoes;
+
+    /**
+     * Construtor completo — para recarga do arquivo.
+     *
+     * @param id            ID persistido
+     * @param fichaTreinoId ID da ficha associada
+     * @param nome          nome do exercício
+     * @param series        número de séries
+     * @param repeticoes    número de repetições
+     */
+    public Exercicio(int id, int fichaTreinoId, String nome, int series, int repeticoes) {
+        this.id = id;
+        this.fichaTreinoId = fichaTreinoId;
+        this.nome = nome;
+        this.series = series;
+        this.repeticoes = repeticoes;
+        if (id >= contadorId) contadorId = id + 1;
+    }
+
+    /**
+     * Construtor sem ID — gera ID automático.
+     *
+     * @param fichaTreinoId ID da ficha associada
+     * @param nome          nome do exercício
+     * @param series        séries
+     * @param repeticoes    repetições
+     */
+    public Exercicio(int fichaTreinoId, String nome, int series, int repeticoes) {
+        this(contadorId++, fichaTreinoId, nome, series, repeticoes);
+    }
+
+    /**
+     * Serializa em linha para arquivo.
+     * Formato: {@code id|fichaTreinoId|nome|series|repeticoes}
+     */
+    @Override
+    public String toFileString() {
+        return id + "|" + fichaTreinoId + "|" + nome + "|" + series + "|" + repeticoes;
+    }
+
+    /**
+     * Reconstrói a partir de linha do arquivo.
+     *
+     * @param linha linha formatada
+     * @return instância de Exercicio
+     */
+    public static Exercicio fromFileString(String linha) {
+        String[] p = linha.split("\\|");
+        return new Exercicio(Integer.parseInt(p[0]), Integer.parseInt(p[1]),
+                p[2], Integer.parseInt(p[3]), Integer.parseInt(p[4]));
+    }
+
+    /** Reseta contador. @param valor novo valor */
+    public static void resetContador(int valor) { contadorId = valor; }
+
+    @Override public int getId() { return id; }
+    public int getFichaTreinoId() { return fichaTreinoId; }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    public int getSeries() { return series; }
+    public void setSeries(int series) { this.series = series; }
+    public int getRepeticoes() { return repeticoes; }
+    public void setRepeticoes(int repeticoes) { this.repeticoes = repeticoes; }
+
+    @Override
+    public String toString() {
+        return String.format("[%d] %s — %dx%d", id, nome, series, repeticoes);
+    }
+}

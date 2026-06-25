@@ -1,0 +1,36 @@
+package academia.repository;
+
+import academia.model.FichaTreino;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Repositório concreto para {@link FichaTreino}.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class FichaTreinoRepositorio extends RepositorioBase<FichaTreino> {
+
+    /** @param dataDir diretório de dados */
+    public FichaTreinoRepositorio(String dataDir) {
+        super(dataDir + "/fichas.txt");
+    }
+
+    @Override
+    protected FichaTreino fromFileString(String linha) {
+        return FichaTreino.fromFileString(linha);
+    }
+
+    /**
+     * Retorna a ficha ativa associada a um aluno.
+     *
+     * @param alunoId ID do aluno
+     * @return lista de fichas ativas do aluno
+     */
+    public List<FichaTreino> listarPorAluno(int alunoId) {
+        return lista.stream()
+                .filter(f -> f.getAlunoId() == alunoId && f.isAtiva())
+                .collect(Collectors.toList());
+    }
+}

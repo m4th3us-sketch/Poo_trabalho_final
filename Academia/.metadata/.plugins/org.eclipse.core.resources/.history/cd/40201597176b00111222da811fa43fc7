@@ -1,0 +1,26 @@
+package academia.model;
+
+/**
+ * Interface que define o contrato de persistência para entidades do sistema.
+ * Toda classe que pode ser gravada em arquivo deve implementar esta interface.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public interface Persistivel {
+
+    /**
+     * Serializa o objeto em uma linha de texto para gravação em arquivo.
+     * Os campos devem ser separados por {@code |}.
+     *
+     * @return linha formatada representando o objeto
+     */
+    String toFileString();
+
+    /**
+     * Retorna o identificador único do objeto.
+     *
+     * @return id do objeto
+     */
+    int getId();
+}

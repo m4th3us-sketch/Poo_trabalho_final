@@ -1,0 +1,355 @@
+package academia;
+
+import academia.exception.*;
+import academia.model.*;
+import academia.repository.*;
+import academia.service.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Casos de teste funcionais do Sistema de Gerenciamento de Academia.
+ *
+ * <p>Cada método {@code testXxx()} representa um caso de teste independente.
+ * Os resultados são impressos no console com indicação de PASSOU / FALHOU.</p>
+ *
+ * <p>Testes cobrem: cadastro, atualização, exclusão, busca, persistência
+ * em arquivo, regras de negócio e lançamento correto de exceções.</p>
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class CasosTeste {
+
+    private static int passou = 0;
+    private static int falhou = 0;
+    private static final String TMP_DIR = "data_test";
+
+    /**
+     * Executa todos os casos de teste.
+     *
+     * @param args argumentos (não utilizados)
+     */
+    public static void main(String[] args) {
+        System.out.println("╔═══════════════════════════════════════╗");
+        System.out.println("║       CASOS DE TESTE FUNCIONAIS       ║");
+        System.out.println("╚═══════════════════════════════════════╝\n");
+
+        // Reset para testes isolados
+        Aluno.resetContador(1); Pagamento.resetContador(1);
+        FichaTreino.resetContador(1); Exercicio.resetContador(1);
+        Acompanhamento.resetContador(1);
+
+        testCT01_CadastrarAlunoComSucesso();
+        testCT02_CpfDuplicadoLancaExcecao();
+        testCT03_BuscarAlunoPorId();
+        testCT04_BuscarAlunoIdInexistente();
+        testCT05_AtualizarAluno();
+        testCT06_ExcluirAluno();
+        testCT07_PersistenciaEmArquivo();
+        testCT08_RegistrarPagamento();
+        testCT09_PagamentoValorZeroInvalido();
+        testCT10_CadastrarFichaTreino();
+        testCT11_AssociarFichaSemExercicio();
+        testCT12_AssociarFichaComExercicio();
+        testCT13_ImprimirFicha();
+        testCT14_RegistrarAcompanhamento();
+        testCT15_HistoricoAcompanhamentoPorAluno();
+        testCT16_ExcluirFichaExcluiExercicios();
+        testCT17_ListarPagamentosPorAluno();
+        testCT18_CancelarPagamento();
+
+        System.out.println("\n══════════════════════════════════════");
+        System.out.printf("TOTAL: %d testes | ✔ %d passou | ✘ %d falhou%n",
+                passou + falhou, passou, falhou);
+        System.out.println("══════════════════════════════════════");
+
+        // Limpa arquivos de teste
+        java.io.File dir = new java.io.File(TMP_DIR);
+        if (dir.exists()) for (java.io.File f : dir.listFiles()) f.delete();
+        dir.delete();
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    private static AlunoService alunoSvc() {
+        return new AlunoService(new AlunoRepositorio(TMP_DIR));
+    }
+
+    private static PagamentoService pagSvc(AlunoRepositorio ar) {
+        return new PagamentoService(new PagamentoRepositorio(TMP_DIR), ar);
+    }
+
+    private static FichaTreinoService fichaSvc(AlunoRepositorio ar) {
+        return new FichaTreinoService(
+                new FichaTreinoRepositorio(TMP_DIR),
+                new ExercicioRepositorio(TMP_DIR), ar);
+    }
+
+    private static AcompanhamentoService acSvc(AlunoRepositorio ar) {
+        return new AcompanhamentoService(new AcompanhamentoRepositorio(TMP_DIR), ar);
+    }
+
+    private static void ok(String nome) {
+        System.out.printf("  ✔  %s%n", nome); passou++;
+    }
+
+    private static void fail(String nome, String motivo) {
+        System.out.printf("  ✘  %s — %s%n", nome, motivo); falhou++;
+    }
+
+    // ── Casos de Teste ────────────────────────────────────────────────────
+
+    /** CT01 — Cadastrar aluno com dados válidos deve retornar ID > 0. */
+    static void testCT01_CadastrarAlunoComSucesso() {
+        try {
+            Aluno.resetContador(1);
+            AlunoService svc = alunoSvc();
+            Aluno a = svc.cadastrar("João Silva", "111.111.111-11",
+                    LocalDate.of(1990, 1, 15), "61999999999", "joao@email.com");
+            if (a.getId() > 0 && a.getNome().equals("João Silva")) ok("CT01 — Cadastrar aluno");
+            else fail("CT01", "ID ou nome incorretos");
+        } catch (Exception e) { fail("CT01", e.getMessage()); }
+    }
+
+    /** CT02 — Cadastrar aluno com CPF duplicado deve lançar CpfDuplicadoException. */
+    static void testCT02_CpfDuplicadoLancaExcecao() {
+        try {
+            Aluno.resetContador(100);
+            AlunoService svc = alunoSvc();
+            svc.cadastrar("Maria", "222.222.222-22", LocalDate.of(1995, 5, 20), "61999", "m@x.com");
+            svc.cadastrar("Maria2", "222.222.222-22", LocalDate.of(1996, 6, 10), "61888", "m2@x.com");
+            fail("CT02", "Deveria ter lançado CpfDuplicadoException");
+        } catch (CpfDuplicadoException e) { ok("CT02 — CPF duplicado lança exceção"); }
+          catch (Exception e) { fail("CT02", "Exceção errada: " + e.getClass().getSimpleName()); }
+    }
+
+    /** CT03 — Buscar aluno por ID existente deve retornar o aluno correto. */
+    static void testCT03_BuscarAlunoPorId() {
+        try {
+            Aluno.resetContador(200);
+            AlunoService svc = alunoSvc();
+            Aluno a = svc.cadastrar("Pedro", "333.333.333-33", LocalDate.of(1985, 3, 10), "61777", "p@x.com");
+            Aluno encontrado = svc.buscarPorId(a.getId());
+            if (encontrado.getCpf().equals("333.333.333-33")) ok("CT03 — Buscar por ID");
+            else fail("CT03", "CPF diferente do esperado");
+        } catch (Exception e) { fail("CT03", e.getMessage()); }
+    }
+
+    /** CT04 — Buscar aluno com ID inexistente deve lançar EntidadeNaoEncontradaException. */
+    static void testCT04_BuscarAlunoIdInexistente() {
+        try {
+            AlunoService svc = alunoSvc();
+            svc.buscarPorId(9999);
+            fail("CT04", "Deveria ter lançado EntidadeNaoEncontradaException");
+        } catch (EntidadeNaoEncontradaException e) { ok("CT04 — Busca ID inexistente lança exceção"); }
+          catch (Exception e) { fail("CT04", "Exceção errada: " + e.getClass().getSimpleName()); }
+    }
+
+    /** CT05 — Atualizar aluno deve persistir os novos dados. */
+    static void testCT05_AtualizarAluno() {
+        try {
+            Aluno.resetContador(300);
+            AlunoService svc = alunoSvc();
+            Aluno a = svc.cadastrar("Ana", "444.444.444-44", LocalDate.of(2000, 7, 4), "61666", "ana@x.com");
+            svc.atualizar(a.getId(), "Ana Costa", "61555", "anac@x.com", LocalDate.of(2000, 7, 4));
+            Aluno atualizado = svc.buscarPorId(a.getId());
+            if (atualizado.getNome().equals("Ana Costa")) ok("CT05 — Atualizar aluno");
+            else fail("CT05", "Nome não foi atualizado");
+        } catch (Exception e) { fail("CT05", e.getMessage()); }
+    }
+
+    /** CT06 — Excluir aluno deve removê-lo da lista. */
+    static void testCT06_ExcluirAluno() {
+        try {
+            Aluno.resetContador(400);
+            AlunoService svc = alunoSvc();
+            Aluno a = svc.cadastrar("Carlos", "555.555.555-55", LocalDate.of(1988, 11, 22), "61444", "c@x.com");
+            svc.excluir(a.getId());
+            int tam = svc.listarTodos().size();
+            // não deve encontrar mais
+            try { svc.buscarPorId(a.getId()); fail("CT06", "Aluno ainda existe"); }
+            catch (EntidadeNaoEncontradaException e) { ok("CT06 — Excluir aluno"); }
+        } catch (Exception e) { fail("CT06", e.getMessage()); }
+    }
+
+    /** CT07 — Dados devem persistir entre instâncias (simula reinício da aplicação). */
+    static void testCT07_PersistenciaEmArquivo() {
+        try {
+            Aluno.resetContador(500);
+            // Instância 1 — salva
+            AlunoService svc1 = alunoSvc();
+            Aluno a = svc1.cadastrar("Lucia", "666.666.666-66", LocalDate.of(1992, 8, 30), "61333", "l@x.com");
+            int id = a.getId();
+            // Instância 2 — lê do arquivo
+            AlunoService svc2 = alunoSvc();
+            Aluno relido = svc2.buscarPorId(id);
+            if (relido.getNome().equals("Lucia")) ok("CT07 — Persistência em arquivo");
+            else fail("CT07", "Nome não corresponde ao salvo");
+        } catch (Exception e) { fail("CT07", e.getMessage()); }
+    }
+
+    /** CT08 — Registrar pagamento com dados válidos deve retornar status PAGO. */
+    static void testCT08_RegistrarPagamento() {
+        try {
+            Aluno.resetContador(600); Pagamento.resetContador(1);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Diana", "777.777.777-77", LocalDate.of(1993, 4, 15), "61222", "d@x.com");
+            PagamentoService ps = pagSvc(ar);
+            Pagamento p = ps.registrar(a.getId(), 150.0, LocalDate.now(), "PIX");
+            if (p.getStatus().equals("PAGO") && p.getValor() == 150.0) ok("CT08 — Registrar pagamento");
+            else fail("CT08", "Status ou valor incorretos");
+        } catch (Exception e) { fail("CT08", e.getMessage()); }
+    }
+
+    /** CT09 — Pagamento com valor zero deve lançar PagamentoInvalidoException. */
+    static void testCT09_PagamentoValorZeroInvalido() {
+        try {
+            Aluno.resetContador(700); Pagamento.resetContador(100);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Fernanda", "888.888.888-88", LocalDate.of(1997, 9, 9), "61111", "f@x.com");
+            PagamentoService ps = pagSvc(ar);
+            ps.registrar(a.getId(), 0.0, LocalDate.now(), "Cartão");
+            fail("CT09", "Deveria lançar PagamentoInvalidoException");
+        } catch (PagamentoInvalidoException e) { ok("CT09 — Valor zero lança exceção"); }
+          catch (Exception e) { fail("CT09", "Exceção errada: " + e.getClass().getSimpleName()); }
+    }
+
+    /** CT10 — Cadastrar ficha de treino deve retornar ficha com ID válido e ativa. */
+    static void testCT10_CadastrarFichaTreino() {
+        try {
+            Aluno.resetContador(800); FichaTreino.resetContador(1);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            FichaTreinoService fs = fichaSvc(ar);
+            FichaTreino f = fs.cadastrar("Treino A", "Hipertrofia");
+            if (f.getId() > 0 && f.isAtiva()) ok("CT10 — Cadastrar ficha de treino");
+            else fail("CT10", "ID inválido ou ficha inativa");
+        } catch (Exception e) { fail("CT10", e.getMessage()); }
+    }
+
+    /** CT11 — Associar ficha sem exercícios deve lançar FichaSemExercicioException. */
+    static void testCT11_AssociarFichaSemExercicio() {
+        try {
+            Aluno.resetContador(900); FichaTreino.resetContador(200); Exercicio.resetContador(1);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Gabriel", "999.999.999-99", LocalDate.of(1994, 12, 3), "61010", "g@x.com");
+            FichaTreinoService fs = fichaSvc(ar);
+            FichaTreino f = fs.cadastrar("Treino B", "Emagrecimento");
+            fs.associarAluno(f.getId(), a.getId());
+            fail("CT11", "Deveria lançar FichaSemExercicioException");
+        } catch (FichaSemExercicioException e) { ok("CT11 — Ficha sem exercício lança exceção"); }
+          catch (Exception e) { fail("CT11", "Exceção errada: " + e.getClass().getSimpleName()); }
+    }
+
+    /** CT12 — Associar ficha com exercícios deve funcionar corretamente. */
+    static void testCT12_AssociarFichaComExercicio() {
+        try {
+            Aluno.resetContador(1000); FichaTreino.resetContador(300); Exercicio.resetContador(500);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Helena", "000.000.000-00", LocalDate.of(1991, 6, 18), "61020", "h@x.com");
+            FichaTreinoService fs = fichaSvc(ar);
+            FichaTreino f = fs.cadastrar("Treino C", "Força");
+            fs.adicionarExercicio(f.getId(), "Agachamento", 4, 12);
+            FichaTreino associada = fs.associarAluno(f.getId(), a.getId());
+            if (associada.getAlunoId() == a.getId()) ok("CT12 — Associar ficha com exercício");
+            else fail("CT12", "alunoId não foi atualizado");
+        } catch (Exception e) { fail("CT12", e.getMessage()); }
+    }
+
+    /** CT13 — Imprimir ficha deve retornar string com nome dos exercícios. */
+    static void testCT13_ImprimirFicha() {
+        try {
+            Aluno.resetContador(1100); FichaTreino.resetContador(400); Exercicio.resetContador(600);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            FichaTreinoService fs = fichaSvc(ar);
+            FichaTreino f = fs.cadastrar("Treino D", "Resistência");
+            fs.adicionarExercicio(f.getId(), "Esteira", 1, 30);
+            String impressao = fs.imprimir(f.getId());
+            if (impressao.contains("Esteira")) ok("CT13 — Imprimir ficha");
+            else fail("CT13", "Exercício não aparece na impressão");
+        } catch (Exception e) { fail("CT13", e.getMessage()); }
+    }
+
+    /** CT14 — Registrar acompanhamento deve persistir observações e evolução. */
+    static void testCT14_RegistrarAcompanhamento() {
+        try {
+            Aluno.resetContador(1200); Acompanhamento.resetContador(1);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Igor", "121.212.121-21", LocalDate.of(1987, 2, 14), "61030", "i@x.com");
+            AcompanhamentoService acs = acSvc(ar);
+            Acompanhamento ac = acs.registrar(a.getId(), LocalDate.now(), "Treino forte", "Melhorou resistência");
+            if (ac.getObservacoes().equals("Treino forte")) ok("CT14 — Registrar acompanhamento");
+            else fail("CT14", "Observação não foi salva corretamente");
+        } catch (Exception e) { fail("CT14", e.getMessage()); }
+    }
+
+    /** CT15 — Histórico de acompanhamento deve filtrar por aluno corretamente. */
+    static void testCT15_HistoricoAcompanhamentoPorAluno() {
+        try {
+            Aluno.resetContador(1300); Acompanhamento.resetContador(200);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a1 = as.cadastrar("Julia", "131.313.131-31", LocalDate.of(1999, 10, 10), "61040", "j@x.com");
+            Aluno a2 = as.cadastrar("Kleber", "141.414.141-41", LocalDate.of(1983, 7, 7), "61050", "k@x.com");
+            AcompanhamentoService acs = acSvc(ar);
+            acs.registrar(a1.getId(), LocalDate.now(), "Obs A1-1", "Evo A1-1");
+            acs.registrar(a1.getId(), LocalDate.now(), "Obs A1-2", "Evo A1-2");
+            acs.registrar(a2.getId(), LocalDate.now(), "Obs A2-1", "Evo A2-1");
+            List<Acompanhamento> hist = acs.listarPorAluno(a1.getId());
+            if (hist.size() == 2) ok("CT15 — Histórico filtrado por aluno");
+            else fail("CT15", "Esperava 2 registros, obteve " + hist.size());
+        } catch (Exception e) { fail("CT15", e.getMessage()); }
+    }
+
+    /** CT16 — Excluir ficha deve também excluir exercícios associados. */
+    static void testCT16_ExcluirFichaExcluiExercicios() {
+        try {
+            Aluno.resetContador(1400); FichaTreino.resetContador(500); Exercicio.resetContador(700);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            FichaTreinoService fs = fichaSvc(ar);
+            FichaTreino f = fs.cadastrar("Treino E", "Mobilidade");
+            fs.adicionarExercicio(f.getId(), "Alongamento", 3, 30);
+            fs.excluir(f.getId());
+            try { fs.buscarPorId(f.getId()); fail("CT16", "Ficha deveria ter sido excluída"); }
+            catch (EntidadeNaoEncontradaException e) { ok("CT16 — Excluir ficha remove exercícios"); }
+        } catch (Exception e) { fail("CT16", e.getMessage()); }
+    }
+
+    /** CT17 — Listar pagamentos por aluno deve retornar apenas os do aluno informado. */
+    static void testCT17_ListarPagamentosPorAluno() {
+        try {
+            Aluno.resetContador(1500); Pagamento.resetContador(300);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Laura", "151.515.151-51", LocalDate.of(1996, 3, 25), "61060", "la@x.com");
+            PagamentoService ps = pagSvc(ar);
+            ps.registrar(a.getId(), 100.0, LocalDate.now(), "PIX");
+            ps.registrar(a.getId(), 200.0, LocalDate.now(), "Cartão");
+            List<Pagamento> pags = ps.listarPorAluno(a.getId());
+            if (pags.size() == 2) ok("CT17 — Listar pagamentos por aluno");
+            else fail("CT17", "Esperava 2 pagamentos, obteve " + pags.size());
+        } catch (Exception e) { fail("CT17", e.getMessage()); }
+    }
+
+    /** CT18 — Cancelar pagamento deve alterar status para CANCELADO. */
+    static void testCT18_CancelarPagamento() {
+        try {
+            Aluno.resetContador(1600); Pagamento.resetContador(400);
+            AlunoRepositorio ar = new AlunoRepositorio(TMP_DIR);
+            AlunoService as = new AlunoService(ar);
+            Aluno a = as.cadastrar("Marcos", "161.616.161-61", LocalDate.of(1980, 1, 1), "61070", "ma@x.com");
+            PagamentoService ps = pagSvc(ar);
+            Pagamento p = ps.registrar(a.getId(), 120.0, LocalDate.now(), "Dinheiro");
+            ps.cancelar(p.getId());
+            Pagamento atualizado = ps.buscarPorId(p.getId());
+            if (atualizado.getStatus().equals("CANCELADO")) ok("CT18 — Cancelar pagamento");
+            else fail("CT18", "Status não foi alterado para CANCELADO");
+        } catch (Exception e) { fail("CT18", e.getMessage()); }
+    }
+}

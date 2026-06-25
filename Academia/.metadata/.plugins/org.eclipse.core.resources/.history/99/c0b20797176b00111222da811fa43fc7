@@ -1,0 +1,18 @@
+package academia.exception;
+
+/**
+ * Lançada ao tentar associar ao aluno uma ficha de treino sem exercícios cadastrados.
+ *
+ * @author Sistema Academia
+ * @version 1.0
+ */
+public class FichaSemExercicioException extends AcademiaException {
+
+    /**
+     * @param fichaId ID da ficha sem exercícios
+     */
+    public FichaSemExercicioException(int fichaId) {
+        super("FICHA_SEM_EXERCICIO",
+              "A ficha de treino #" + fichaId + " não possui exercícios cadastrados.");
+    }
+}
